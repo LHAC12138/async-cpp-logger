@@ -1,0 +1,16 @@
+# 可执行程序
+logger
+*.out
+*.exe
+
+# 日志文件
+*.txt
+*.log
+
+# 编译临时文件
+*.o
+*.so
+*.a
+
+# VSCode配置
+.vscode/
