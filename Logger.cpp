@@ -13,6 +13,7 @@
 #include<ctime>
 #include<iomanip>
 
+enum class Log_level {INFO,DEBUG,ERROR};
 
 template<typename T>
 std::string to_string_helper(T&& args) {
@@ -78,6 +79,19 @@ public:
             log_file.close();
         }
     }
+
+    template<typename... Args>
+    void log(Log_level level, const std::string& format, Args&& ...args) {
+        std::string level_str;
+        switch(level){
+            case Log_level::INFO: level_str="[INFO]";break;
+            case Log_level::DEBUG: level_str="[DEBUG]";break;
+            case Log_level::ERROR: level_str="[ERROR]";break;
+        }
+        Lq.push(level_str+formatMessage(format,std::forward<Args>(args)...));
+    }
+
+
     template<typename... Args>
     void log(const std::string& format, Args&& ...args) {
         Lq.push(formatMessage(format, std::forward<Args>(args)...));
@@ -133,10 +147,10 @@ int main() {
         double duration = 3.5;
         std::string world = "World";
 
-        logger.log("User {} performed {} in {} seconds.", user_id, action, duration);
-        logger.log("Hello {}", world);
-        logger.log("This is a message without placeholders.");
-        logger.log("Multiple placeholders: {}, {}, {}.", 1, 2, 3);
+        logger.log(Log_level::INFO,"User {} performed {} in {} seconds.", user_id, action, duration);
+        logger.log(Log_level::DEBUG,"Hello {}", world);
+        logger.log(Log_level::ERROR,"This is a message without placeholders.");
+        logger.log(Log_level::INFO,"Multiple placeholders: {}, {}, {}.", 1, 2, 3);
 
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
