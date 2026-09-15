@@ -10,3 +10,4 @@ C++17 简易异步日志库，练手项目，生产者消费者模型。
 # 编译
 ```bash
 g++ Logger.cpp -o logger -std=c++17 -pthread
+./logger
