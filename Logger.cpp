@@ -13,15 +13,15 @@
 #include<ctime>
 #include<iomanip>
 
-enum class Log_level {INFO,DEBUG,ERROR};
+enum class Log_level { INFO, DEBUG, ERROR };
 
 template<typename T>
 std::string to_string_helper(T&& args) {
     std::ostringstream oss;
-    oss<<std::forward<T>(args);
+    oss << std::forward<T>(args);
     return oss.str();
 }
-   
+
 std::string get_time() {
     auto now = std::chrono::system_clock::now();
     std::time_t t = std::chrono::system_clock::to_time_t(now);
@@ -37,7 +37,7 @@ public:
         cond.notify_one();
     }
     bool pop(std::string& msg)
-    {   
+    {
         std::unique_lock<std::mutex> lock(mtx);
         while (q_.empty() && !is_shutdown) {
             cond.wait(lock);
@@ -49,7 +49,7 @@ public:
         q_.pop();
         return true;
     }
-    void shutdown(){
+    void shutdown() {
         std::lock_guard<std::mutex> lock(mtx);
         is_shutdown = true;
         cond.notify_all();
@@ -63,7 +63,8 @@ private:
 
 class Logger {
 public:
-    Logger(const std::string& filename) :log_file(filename, std::ios::out | std::ios::app) {
+    Logger(const std::string& filename,bool enable_console_out = true) :log_file(filename, std::ios::out | std::ios::app), 
+        enable_console(enable_console_out) {
         if (!log_file.is_open()) {
             throw std::runtime_error("文件打开错误");
         }
@@ -75,7 +76,7 @@ public:
         if (log_thread.joinable()) {
             log_thread.join();
         }
-        if(log_file.is_open()) {
+        if (log_file.is_open()) {
             log_file.close();
         }
     }
@@ -83,12 +84,12 @@ public:
     template<typename... Args>
     void log(Log_level level, const std::string& format, Args&& ...args) {
         std::string level_str;
-        switch(level){
-            case Log_level::INFO: level_str="[INFO]";break;
-            case Log_level::DEBUG: level_str="[DEBUG]";break;
-            case Log_level::ERROR: level_str="[ERROR]";break;
+        switch (level) {
+        case Log_level::INFO: level_str = "[INFO]"; break;
+        case Log_level::DEBUG: level_str = "[DEBUG]"; break;
+        case Log_level::ERROR: level_str = "[ERROR]"; break;
         }
-        Lq.push(level_str+formatMessage(format,std::forward<Args>(args)...));
+        Lq.push(level_str + formatMessage(format, std::forward<Args>(args)...));
     }
 
 
@@ -97,16 +98,20 @@ public:
         Lq.push(formatMessage(format, std::forward<Args>(args)...));
     }
 
-    
+
 private:
     LogQueue Lq;
     std::thread log_thread;
     std::ofstream  log_file;
+    bool enable_console;
 
     void processqueue() {
         std::string msg;
         while (Lq.pop(msg)) {
-            log_file << msg << std::endl;
+            log_file << msg << '\n';
+            if (enable_console) {
+                std::cout << msg << '\n';
+            }
         }
     }
     template<typename...Args>
@@ -138,7 +143,7 @@ private:
 };
 int main() {
     try {
-        Logger logger("log.txt");
+        Logger logger("log.txt",true);
 
         logger.log("Starting application.");
 
@@ -147,15 +152,15 @@ int main() {
         double duration = 3.5;
         std::string world = "World";
 
-        logger.log(Log_level::INFO,"User {} performed {} in {} seconds.", user_id, action, duration);
-        logger.log(Log_level::DEBUG,"Hello {}", world);
-        logger.log(Log_level::ERROR,"This is a message without placeholders.");
-        logger.log(Log_level::INFO,"Multiple placeholders: {}, {}, {}.", 1, 2, 3);
+        logger.log(Log_level::INFO, "User {} performed {} in {} seconds.", user_id, action, duration);
+        logger.log(Log_level::DEBUG, "Hello {}", world);
+        logger.log(Log_level::ERROR, "This is a message without placeholders.");
+        logger.log(Log_level::INFO, "Multiple placeholders: {}, {}, {}.", 1, 2, 3);
 
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
     catch (const std::exception& ex) {
-        std::cerr << "日志系统初始化失败: " << ex.what() << std::endl;
+        std::cerr << "日志系统初始化失败: " << ex.what() << '\n';
     }
 
     return 0;
